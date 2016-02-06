@@ -1,34 +1,33 @@
 import { Component, OnInit } from 'angular2/core';
+import { PadBank } from './pad-bank.component';
+import { PadBankService } from './pad-bank.service';
+import { MIDIInputSelector } from './midi-input-selector.component';
+import { MIDIService } from './midi.service';
+import { AudioService } from './audio.service';
 
 
 @Component({
-    selector: 'my-app',
+    selector: 'sampler-app',
     template: `
-        <div>
-            <button (click)='onClick()' [disabled]='loadingSample'>play</button>
-        </div>
-        <div>
-            <label for='gain'>Volume: </label>
-            <input type='range' min='0' max='1.0' step='0.1' [(ngModel)]='gain' id='gain'>
-        </div>
-        <div>
-            <label for='midiInputsList'>MIDI input: </label>
-            <select id='midiInputsList' (change)='onChangeMIDIInput($event)' [(ngModel)]='selectedMIDIInputIndex'>
-                <option value="-1">No input</option>
-                <option *ngFor='#input of midiInputs; #inputIndex = index' [value]="inputIndex">{{ input.name }}</option>
-            </select>
-        </div>
-    `
+        <midi-input-selector></midi-input-selector>
+        <pad-bank></pad-bank>
+    `,
+    styles: [`
+        body {
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    `],
+    directives: [PadBank, MIDIInputSelector],
+    providers: [MIDIService, AudioService, PadBankService]
 })
 export class AppComponent implements OnInit {
     private audioContext: AudioContext;
     private loadingSample: boolean = false;
     private audioBuffer: AudioBuffer;
     private gain: number = 1.0;
-
-    private midiInputs = [];
-    private selectedMIDIInputIndex = -1;
-    private selectedMIDIInput = null;
 
     ngOnInit() {
         this.audioContext = new AudioContext();
@@ -42,8 +41,6 @@ export class AppComponent implements OnInit {
             .catch((error) => {
                 throw error;
             });
-
-        this.initializeMIDI();
     }
 
     fetchSample() {
@@ -57,6 +54,7 @@ export class AppComponent implements OnInit {
     }
 
     playSample(noteNumber?: number, velocity?: number) {
+        console.log(noteNumber);
         let bufferSource = this.audioContext.createBufferSource();
         bufferSource.buffer = this.audioBuffer;
 
@@ -78,39 +76,12 @@ export class AppComponent implements OnInit {
         bufferSource.start(0);
     }
 
-    initializeMIDI() {
-        window.navigator.requestMIDIAccess()
-            .then((midi) => {
-                midi.inputs.forEach((input) => this.midiInputs.push(input));
-            });
-    }
 
-    onChangeMIDIInput(event) {
-        // selected midi index should change automatically because ngmodel
-        this.setupMIDIInput(parseInt(event.target.value, 10));
-    }
 
     setupMIDIInput(midiInputIndex) {
-        if (this.selectedMIDIInput) {
-            this.selectedMIDIInput.onmidimessage = null;
-        }
-
-        if (midiInputIndex === -1) {
-            return;
-        }
-
-        this.selectedMIDIInput = this.midiInputs[midiInputIndex];
-        this.selectedMIDIInput.onmidimessage = this.handleMIDIMessage.bind(this);
     }
 
     handleMIDIMessage(midiEvent) {
-        let midiCommand = midiEvent.data[0] >> 4;
-
-        if (midiCommand === 9) {
-            let noteNumber = midiEvent.data[1];
-            let velocity = midiEvent.data[2];
-            this.playSample(noteNumber, velocity);
-        }
     }
 
     onClick() {
