@@ -1,6 +1,6 @@
 import { Injectable } from 'angular2/core';
 import { PadBankService } from './pad-bank.service';
-import { Constants } from './constants';
+import { ConstantsService } from './constants.service';
 
 
 @Injectable()
@@ -13,7 +13,8 @@ export class MIDIService {
     private noteOnHandlers = [];
     private noteOffHandlers = [];
 
-    constructor(private padBankService: PadBankService) {
+    constructor(private padBankService: PadBankService,
+                private constantsService: ConstantsService) {
         window.navigator.requestMIDIAccess()
             .then((midi) => {
                 midi.inputs.forEach((input) => this.midiInputs.push(input));
@@ -46,7 +47,7 @@ export class MIDIService {
     handleMIDIMessage(message) {
         let midiCommand = message.data[0] >> 4;
         let noteNumber = message.data[1];
-        let note = Constants.NOTE_MAP[noteNumber];
+        let note = this.constantsService.NOTE_MAP.get(noteNumber);
         let velocity = message.data[2];
 
         if (midiCommand === 8 || (midiCommand === 9 && velocity === 0)) {

@@ -1,6 +1,6 @@
 import { Component } from 'angular2/core';
 import { Pad } from './pad.component';
-import { Constants } from './constants';
+import { ConstantsService } from './constants.service';
 
 
 @Component({
@@ -23,7 +23,7 @@ import { Constants } from './constants';
 export class PadBank {
     private notes: string[];
 
-    constructor() {
-        this.notes = Object.keys(Constants.NOTE_MAP).map((key) => Constants.NOTE_MAP[key]);
+    constructor(private constantsService: ConstantsService) {
+        this.notes = Array.from(this.constantsService.NOTE_MAP.values());
     }
 }
